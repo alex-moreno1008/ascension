@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from . import models
 from .database import Base, engine, get_db
+from datetime import date
 
 app = FastAPI(title="Ascension")
 Base.metadata.create_all(bind=engine)
@@ -38,6 +39,7 @@ def create_workout(
 ):
     db_workout = models.WorkoutDB(
         name=workout.name,
+        workout_date = date.today(),
     )
 
     db.add(db_workout)

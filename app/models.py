@@ -18,6 +18,11 @@ class WorkoutDB(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
+    workout_date = Column(
+        Date,
+        default=date.today,
+        nullable=False,
+    )
     
 
 class WorkoutSetDB(Base):

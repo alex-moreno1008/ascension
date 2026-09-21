@@ -16,12 +16,125 @@ class Exercise(BaseModel):
     muscle_group: str
     equipment: Optional[str] = None
 
+class WorkoutCreate(BaseModel):
+    name: str
+
+class WorkoutSetCreate(BaseModel):
+    exercise_id: int
+    set_number: int
+    reps: int
+    weight: float
 
 
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Ascension"}
+
+@app.post("/workouts")
+def create_workout(
+    workout: WorkoutCreate,
+    db: Session = Depends(get_db),
+):
+    db_workout = models.WorkoutDB(
+        name=workout.name,
+    )
+
+    db.add(db_workout)
+    db.commit()
+    db.refresh(db_workout)
+
+    return {
+        "id": db_workout.id,
+        "name": db_workout.name,
+        "workout_date": db_workout.workout_date,
+    }
+
+@app.get("/workouts")
+def get_workouts(db: Session = Depends(get_db)):
+    workouts = db.query(models.WorkoutDB).all()
+
+    return[{
+        "id": workout.id,
+        "name": workout.name,
+        "workoutdate": workout.workout_date,
+    }
+    for workout in workouts
+]
+
+@app.get("/workouts/{workout_id}")
+def get_workout(
+    workout_id: int,
+    db: Session = Depends(get_db),
+):
+    workout = (
+        db.query(models.WorkoutDB)
+        .filter(models.WorkoutDB.id == workout_id)
+        .first()
+    )
+
+    if workout is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Workout not found",
+        )
+
+    return {
+        "id": workout.id,
+        "name": workout.name,
+        "workout_date": workout.workout_date,
+    }
+
+@app.post("/workouts/{workout_id}/sets")
+def create_workout_set(
+    workout_id: int,
+    workout_set: WorkoutSetCreate,
+    db: Session = Depends(get_db),
+):
+    db_workout_set = models.WorkoutSetDB(
+        workout_id=workout_id,
+        exercise_id=workout_set.exercise_id,
+        set_number=workout_set.set_number,
+        reps=workout_set.reps,
+        weight=workout_set.weight,
+    )
+
+    db.add(db_workout_set)
+    db.commit()
+    db.refresh(db_workout_set)
+
+    return {
+        "id": db_workout_set.id,
+        "workout_id": db_workout_set.workout_id,
+        "exercise_id": db_workout_set.exercise_id,
+        "set_number": db_workout_set.set_number,
+        "reps": db_workout_set.reps,
+        "weight": db_workout_set.weight,
+    }
+
+
+@app.get("/workouts/{workout_id}/sets")
+def get_workout_sets(
+    workout_id: int,
+    db: Session = Depends(get_db),
+):
+    workout_sets = (
+        db.query(models.WorkoutSetDB)
+        .filter(models.WorkoutSetDB.workout_id == workout_id)
+        .all()
+    )
+
+    return [
+        {
+            "id": workout_set.id,
+            "workout_id": workout_set.workout_id,
+            "exercise_id": workout_set.exercise_id,
+            "set_number": workout_set.set_number,
+            "reps": workout_set.reps,
+            "weight": workout_set.weight,
+        }
+        for workout_set in workout_sets
+    ]
 
 
 @app.post("/exercises")
